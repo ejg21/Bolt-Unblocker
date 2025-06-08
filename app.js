@@ -15,8 +15,14 @@ const fastify = Fastify({
     logger: true,
     serverFactory: (handler) => {
         const server = createServer((req, res) => {
-            res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-            res.setHeader("Cross-Origin-Embedder-Policy", "anonymous");
+            // REMOVE these headers to allow iframe embedding
+            // res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+            // res.setHeader("Cross-Origin-Embedder-Policy", "anonymous");
+
+            // OPTIONAL: Add these to explicitly allow iframe embedding
+            res.setHeader("X-Frame-Options", "ALLOWALL");
+            res.setHeader("Access-Control-Allow-Origin", "*");
+
             handler(req, res);
         });
 
@@ -28,12 +34,10 @@ const fastify = Fastify({
     }
 });
 
-
 await fastify.register(fastifyStatic, {
     root: publicPath,
     prefix: "/"
 });
-
 
 await fastify.register(fastifyStatic, {
     root: epoxyPath,
@@ -62,16 +66,13 @@ await fastify.register(fastifyStatic, {
     decorateReply: false
 });
 
-
 fastify.get("/", (request, reply) => {
     return reply.sendFile("index.html");
 });
 
-
 fastify.setNotFoundHandler((request, reply) => {
     return reply.sendFile("index.html");
 });
-
 
 function shutdown() {
     console.log("SIGTERM signal received: closing HTTP server");
@@ -81,7 +82,6 @@ function shutdown() {
 
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
-
 
 let port = parseInt(process.env.PORT || "8080");
 if (isNaN(port)) port = 8080;
